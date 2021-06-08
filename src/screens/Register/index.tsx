@@ -1,15 +1,18 @@
-import React, { useState, useE, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Modal,
     TouchableWithoutFeedback,
     Keyboard,
     Alert
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup'
 
 import { useForm } from 'react-hook-form';
+import uuid from 'react-native-uuid';
+import { useNavigation } from '@react-navigation/native'
 
 import { Button } from '../../components/Form/Button';
 import { CategorySelectButton } from '../../components/Form/CategorySelectButton';
@@ -27,7 +30,6 @@ import {
     Fields,
     TransactionsTypes,
 } from './styles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface FormData {
     name: string;
@@ -50,14 +52,15 @@ export function Register() {
     const [transactionType, setTransactionType] = useState('');
     const [categoryModalOpen, setCategoryModalOpen] = useState<boolean>(false);
 
-    const dataKey = '@gofinances:transactions';
-
     const [category, setCategory] = useState({
         key: 'category',
         name: 'Categoria',
     });
 
+    const navigation = useNavigation();
+
     const {
+        reset,
         control,
         handleSubmit,
         formState: { errors }
@@ -65,7 +68,7 @@ export function Register() {
         resolver: yupResolver(schema)
     });
 
-    function handleTransactionTypeSelect(type: 'up' | 'down') {
+    function handleTransactionTypeSelect(type: 'positive' | 'negative') {
         setTransactionType(type);
     }
 
@@ -85,13 +88,17 @@ export function Register() {
             return Alert.alert('Selecione a categoria');
 
         const newTransaction = {
+            id: String(uuid.v4()),
             name: form.name,
             amount: form.amount,
-            transactionType,
-            category: category.key
+            type: transactionType,
+            category: category.key,
+            date: new Date()
         }
 
         try {
+            const dataKey = '@gofinances:transactions';
+
             const data = await AsyncStorage.getItem(dataKey);
             const currentData = data ? JSON.parse(data) : [];
 
@@ -101,20 +108,21 @@ export function Register() {
             ];
 
             await AsyncStorage.setItem(dataKey, JSON.stringify(dataFormatted));
+
+            reset();
+            setTransactionType('');
+            setCategory({
+                key: 'category',
+                name: 'Categoria',
+            });
+
+            navigation.navigate('Listagem');
+
         } catch (error) {
             console.log(error);
             Alert.alert("Não foi possível salvar")
         }
     }
-
-    useEffect(() => {
-        async function loadData() {
-            const data = await AsyncStorage.getItem(dataKey);
-            console.log(JSON.parse(data!));
-        }
-
-        loadData();
-    }, [])
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} >
@@ -147,15 +155,15 @@ export function Register() {
                             <TransactionTypeButton
                                 type="up"
                                 title="Income"
-                                onPress={() => handleTransactionTypeSelect('up')}
-                                isActive={transactionType === 'up'}
+                                onPress={() => handleTransactionTypeSelect('positive')}
+                                isActive={transactionType === 'positive'}
                             />
 
                             <TransactionTypeButton
                                 type="down"
                                 title="Outcome"
-                                onPress={() => handleTransactionTypeSelect('down')}
-                                isActive={transactionType === 'down'}
+                                onPress={() => handleTransactionTypeSelect('negative')}
+                                isActive={transactionType === 'negative'}
                             />
                         </TransactionsTypes>
 
