@@ -5,6 +5,10 @@ import AppleSvg from '../../assets/apple.svg';
 import GoogleleSvg from '../../assets/google.svg';
 import LogoSvg from '../../assets/logo.svg';
 
+import { useAuth } from '../../hooks/auth';
+
+import { SignInSocialButton } from '../../components/SignInSocialButton';
+
 import {
     Container,
     Header,
@@ -12,9 +16,15 @@ import {
     Title,
     SignInTitle,
     Footer,
+    FooterWrapper,
 } from './styles';
 
 export function SignIn() {
+
+    const { user } = useAuth();
+    console.log(user);
+
+
     return (
         <Container>
             <Header>
@@ -35,7 +45,19 @@ export function SignIn() {
                     </SignInTitle>
                 </TitleWrapper>
             </Header>
-            <Footer></Footer>
+            <Footer>
+                <FooterWrapper>
+                    <SignInSocialButton
+                        title="Entrar com Google"
+                        svg={GoogleleSvg}
+                    />
+
+                    <SignInSocialButton
+                        title="Entrar com Apple"
+                        svg={AppleSvg}
+                    />
+                </FooterWrapper>
+            </Footer>
         </Container>
     )
 }
